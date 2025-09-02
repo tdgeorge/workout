@@ -387,6 +387,22 @@ function render() {
                 render();
               }
             }, 1000); // update every second
+
+            // Live update timer label every second, even if render() is called
+            function updateTimerLabel() {
+              if (timerInterval && timerEndTime) {
+                const timerDivLive = document.getElementById("timer-display");
+                if (timerDivLive) {
+                  const remaining = Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000));
+                  timerDivLive.textContent = remaining + "s";
+                }
+                if (remaining > 0) {
+                  setTimeout(updateTimerLabel, 1000);
+                }
+              }
+            }
+            updateTimerLabel();
+
             render();
           };
           stepper.appendChild(startBtn);
@@ -399,6 +415,18 @@ function render() {
             render();
           };
           stepper.appendChild(cancelBtn);
+
+          // Live update timer label every second, even if render() is called
+          setTimeout(() => {
+            const timerDivLive = document.getElementById("timer-display");
+            if (timerDivLive && timerInterval && timerEndTime) {
+              const remaining = Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000));
+              timerDivLive.textContent = remaining + "s";
+              if (remaining > 0) {
+                setTimeout(arguments.callee, 1000);
+              }
+            }
+          }, 1000);
         }
       } else {
         // No duration, regular next button
