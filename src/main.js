@@ -53,21 +53,27 @@ function updateUrl() {
 
 // --- Timer helpers ---
 function playBeep() {
-  // Simple beep using Web Audio API
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(880, ctx.currentTime);
-    oscillator.connect(ctx.destination);
-    oscillator.start();
-    setTimeout(() => {
-      oscillator.stop();
-      ctx.close();
-    }, 400);
-  } catch (e) {
-    // fallback: alert
-    alert("Time's up!");
+  // Try to play a custom sound file if it exists
+  const audio = document.getElementById("timer-audio");
+  if (audio) {
+    audio.currentTime = 0;
+    audio.play();
+  } else {
+    // fallback beep
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = ctx.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+      oscillator.connect(ctx.destination);
+      oscillator.start();
+      setTimeout(() => {
+        oscillator.stop();
+        ctx.close();
+      }, 400);
+    } catch (e) {
+      alert("Time's up!");
+    }
   }
 }
 
@@ -380,7 +386,7 @@ function render() {
                 exStep = nextEx;
                 render();
               }
-            }, 250);
+            }, 1000); // update every second
             render();
           };
           stepper.appendChild(startBtn);
@@ -447,6 +453,16 @@ function render() {
       stepper.appendChild(backBtn);
     }
     app.appendChild(stepper);
+
+    // Add audio element for custom sound if not present
+    if (!document.getElementById("timer-audio")) {
+      const audio = document.createElement("audio");
+      audio.id = "timer-audio";
+      audio.src = "src/timer.mp3"; // Change this path to your uploaded sound file
+      audio.preload = "auto";
+      audio.style.display = "none";
+      document.body.appendChild(audio);
+    }
   } else {
     clearTimer();
   }
@@ -469,11 +485,4 @@ function render() {
   const params = new URLSearchParams(location.search);
   if (params.get('state')) {
     const state = decodeState(params.get('state'));
-    if (state && typeof state === "object") {
-      workouts = Array.isArray(state.workouts) ? state.workouts : [];
-      schedule = typeof state.schedule === "object" && state.schedule !== null ? state.schedule : {};
-    }
-  }
-})();
-
-render();
+    if
