@@ -485,4 +485,11 @@ function render() {
   const params = new URLSearchParams(location.search);
   if (params.get('state')) {
     const state = decodeState(params.get('state'));
-    if
+    if (state && typeof state === "object") {
+      workouts = Array.isArray(state.workouts) ? state.workouts : [];
+      schedule = typeof state.schedule === "object" && state.schedule !== null ? state.schedule : {};
+    }
+  }
+})();
+
+render();
