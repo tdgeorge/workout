@@ -1,7 +1,3 @@
-import React, { useState } from "react";
-import LZString from "lz-string";
-import { createRoot } from "react-dom/client";
-
 // --- Data ---
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 let workouts = [];
@@ -146,6 +142,7 @@ function App() {
   return (
     <div>
       <h1>Workout App</h1>
+      <div id="app"></div>
       <h2>Create Workouts</h2>
       {workouts.map((w, wIdx) => (
         <div key={wIdx} style={{ border: "1px solid #ccc", margin: 8, padding: 8 }}>
