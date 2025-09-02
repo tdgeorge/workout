@@ -167,18 +167,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return result;
     }
 
-    // --- Share/Load functionality ---
+    // --- Share/Load functionality with compression/obfuscation ---
 
     shareBtn.onclick = () => {
         const data = serialize(cards);
-        const url = `${location.origin}${location.pathname}#data=${encodeURIComponent(data)}`;
+        // Compress and encode to base64
+        const compressed = LZString.compressToBase64(data);
+        const url = `${location.origin}${location.pathname}#data=${encodeURIComponent(compressed)}`;
         prompt('Share this URL:', url);
     };
 
     loadBtn.onclick = () => {
         const hash = location.hash;
         if (hash.startsWith('#data=')) {
-            const data = decodeURIComponent(hash.slice(6));
+            const compressed = decodeURIComponent(hash.slice(6));
+            const data = LZString.decompressFromBase64(compressed);
             cards = deserialize(data);
             updateWordList();
             alert('Loaded flashcards from URL!');
@@ -189,7 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auto-load if URL has data
     if (location.hash.startsWith('#data=')) {
-        const data = decodeURIComponent(location.hash.slice(6));
+        const compressed = decodeURIComponent(location.hash.slice(6));
+        const data = LZString.decompressFromBase64(compressed);
         cards = deserialize(data);
         updateWordList();
     }
