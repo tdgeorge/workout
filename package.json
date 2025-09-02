@@ -1,7 +1,7 @@
 {
-  "name": "flashcards",
+  "name": "workout",
   "version": "1.0.0",
-  "description": "A simple JavaScript-based flashcards website.",
+  "description": "A simple JavaScript-based workout website.",
   "main": "src/main.js",
   "scripts": {
     "build": "echo 'No build step needed for static site'"
