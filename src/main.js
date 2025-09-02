@@ -7,6 +7,10 @@ let setStep = 0;
 let exStep = 0;
 let darkMode = localStorage.getItem("workout-darkmode") === "true";
 
+// Timer state
+let timerInterval = null;
+let timerEndTime = null;
+
 // --- Dark mode toggle ---
 function renderDarkToggle() {
   const btn = document.createElement("button");
@@ -45,6 +49,41 @@ function updateUrl() {
   const state = { workouts, schedule };
   const url = location.origin + location.pathname + "?state=" + encodeState(state);
   window.history.replaceState(null, "", url);
+}
+
+// --- Timer helpers ---
+function playBeep() {
+  // Simple beep using Web Audio API
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+    oscillator.connect(ctx.destination);
+    oscillator.start();
+    setTimeout(() => {
+      oscillator.stop();
+      ctx.close();
+    }, 400);
+  } catch (e) {
+    // fallback: alert
+    alert("Time's up!");
+  }
+}
+
+function clearTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerEndTime = null;
+  }
+}
+
+// --- Duration parsing ---
+function parseDuration(durationStr) {
+  if (!durationStr) return null;
+  const match = durationStr.match(/^(\d+)/);
+  return match ? parseInt(match[1], 10) : null;
 }
 
 function render() {
@@ -243,6 +282,7 @@ function render() {
         selectedWorkout = wIdx;
         setStep = 0;
         exStep = 0;
+        clearTimer();
         render();
       };
       startDiv.appendChild(btn);
@@ -289,45 +329,112 @@ function render() {
         (ex.duration ? `Duration: ${ex.duration} <br>` : '');
       stepper.appendChild(p);
 
-      const nextBtn = document.createElement('button');
-      nextBtn.textContent = 'Next';
-      nextBtn.onclick = () => {
-        // Advance to next exercise
-        let nextEx = currentExIdx + 1;
-        let nextSet = currentSetIdx;
-        // Find next valid exercise/set
-        let advanced = false;
-        while (!advanced) {
-          if (nextEx >= w.exercises.length) {
-            nextEx = 0;
-            nextSet++;
-          }
-          if (nextSet >= maxSets) {
-            // Done!
-            selectedWorkout = null;
+      // Duration logic
+      const durationSeconds = parseDuration(ex.duration);
+      if (durationSeconds) {
+        // Timer display
+        const timerDiv = document.createElement('div');
+        timerDiv.style.margin = "1em 0";
+        timerDiv.style.fontSize = "1.5em";
+        timerDiv.style.fontWeight = "bold";
+        timerDiv.id = "timer-display";
+        timerDiv.textContent = timerInterval && timerEndTime
+          ? Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000)) + "s"
+          : durationSeconds + "s";
+        stepper.appendChild(timerDiv);
+
+        // Start button
+        if (!timerInterval) {
+          const startBtn = document.createElement('button');
+          startBtn.textContent = 'Start';
+          startBtn.onclick = () => {
+            timerEndTime = Date.now() + durationSeconds * 1000;
+            timerDiv.textContent = durationSeconds + "s";
+            timerInterval = setInterval(() => {
+              const remaining = Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000));
+              timerDiv.textContent = remaining + "s";
+              if (remaining <= 0) {
+                clearTimer();
+                playBeep();
+                // Advance to next exercise/set
+                let nextEx = currentExIdx + 1;
+                let nextSet = currentSetIdx;
+                let advanced = false;
+                while (!advanced) {
+                  if (nextEx >= w.exercises.length) {
+                    nextEx = 0;
+                    nextSet++;
+                  }
+                  if (nextSet >= maxSets) {
+                    selectedWorkout = null;
+                    render();
+                    return;
+                  }
+                  if (w.exercises[nextEx] && Number(w.exercises[nextEx].sets) > nextSet) {
+                    advanced = true;
+                    break;
+                  }
+                  nextEx++;
+                }
+                setStep = nextSet;
+                exStep = nextEx;
+                render();
+              }
+            }, 250);
             render();
-            return;
-          }
-          if (w.exercises[nextEx] && Number(w.exercises[nextEx].sets) > nextSet) {
-            advanced = true;
-            break;
-          }
-          nextEx++;
+          };
+          stepper.appendChild(startBtn);
+        } else {
+          // Show a cancel button if timer is running
+          const cancelBtn = document.createElement('button');
+          cancelBtn.textContent = 'Cancel Timer';
+          cancelBtn.onclick = () => {
+            clearTimer();
+            render();
+          };
+          stepper.appendChild(cancelBtn);
         }
-        setStep = nextSet;
-        exStep = nextEx;
-        render();
-      };
-      stepper.appendChild(nextBtn);
+      } else {
+        // No duration, regular next button
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Next';
+        nextBtn.onclick = () => {
+          let nextEx = currentExIdx + 1;
+          let nextSet = currentSetIdx;
+          let advanced = false;
+          while (!advanced) {
+            if (nextEx >= w.exercises.length) {
+              nextEx = 0;
+              nextSet++;
+            }
+            if (nextSet >= maxSets) {
+              selectedWorkout = null;
+              render();
+              return;
+            }
+            if (w.exercises[nextEx] && Number(w.exercises[nextEx].sets) > nextSet) {
+              advanced = true;
+              break;
+            }
+            nextEx++;
+          }
+          setStep = nextSet;
+          exStep = nextEx;
+          render();
+        };
+        stepper.appendChild(nextBtn);
+      }
 
       const quitBtn = document.createElement('button');
       quitBtn.textContent = 'Quit';
       quitBtn.onclick = () => {
+        clearTimer();
         selectedWorkout = null;
         render();
       };
       stepper.appendChild(quitBtn);
     } else {
+      clearTimer();
       const done = document.createElement('h4');
       done.textContent = 'Workout Complete!';
       stepper.appendChild(done);
@@ -340,6 +447,8 @@ function render() {
       stepper.appendChild(backBtn);
     }
     app.appendChild(stepper);
+  } else {
+    clearTimer();
   }
 
   // --- Restore focus and selection ---
