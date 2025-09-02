@@ -2,11 +2,16 @@ import React, { useState } from "react";
 import LZString from "lz-string";
 import { createRoot } from "react-dom/client";
 
+// --- Data ---
+const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+let workouts = [];
+let schedule = {};
+let selectedWorkout = null;
+let stepIdx = 0;
+
 // Helper to encode/decode schedule in URL
 const encodeSchedule = (schedule) => encodeURIComponent(btoa(JSON.stringify(schedule)));
 const decodeSchedule = (str) => JSON.parse(atob(decodeURIComponent(str)));
-
-const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 function App() {
   const [workouts, setWorkouts] = useState([]);
@@ -237,3 +242,10 @@ function App() {
 const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(<App />);
+
+// --- Load from URL if present ---
+(function loadFromUrl() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('schedule')) {
+    schedule = decodeSchedule(params.get('schedule'));
+  }
