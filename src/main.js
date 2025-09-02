@@ -10,20 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const restartBtn = document.getElementById('restart-btn');
     const toggleThemeBtn = document.getElementById('toggle-theme-btn');
 
-    // New: Share/Load buttons
+    // Only Share button (remove Load from URL)
     let shareBtn = document.getElementById('share-btn');
-    let loadBtn = document.getElementById('load-btn');
     if (!shareBtn) {
         shareBtn = document.createElement('button');
         shareBtn.id = 'share-btn';
         shareBtn.textContent = 'Share';
         inputSection.appendChild(shareBtn);
-    }
-    if (!loadBtn) {
-        loadBtn = document.createElement('button');
-        loadBtn.id = 'load-btn';
-        loadBtn.textContent = 'Load from URL';
-        inputSection.appendChild(loadBtn);
     }
 
     let cards = [];
@@ -35,32 +28,50 @@ document.addEventListener('DOMContentLoaded', () => {
       wordList.innerHTML = '';
       cards.forEach((c, i) => {
         const li = document.createElement('li');
-        li.textContent = `${c.word} — ${c.definition} `;
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.justifyContent = 'space-between';
 
-        // Edit button
+        // Word/definition text
+        const textSpan = document.createElement('span');
+        textSpan.textContent = `${c.word} — ${c.definition}`;
+        li.appendChild(textSpan);
+
+        // Button container for vertical alignment
+        const btnContainer = document.createElement('span');
+        btnContainer.style.display = 'flex';
+        btnContainer.style.flexDirection = 'column';
+        btnContainer.style.gap = '2px';
+        btnContainer.style.marginLeft = '10px';
+
+        // Edit button (✏️)
         const editBtn = document.createElement('button');
-        editBtn.textContent = 'Edit';
-        editBtn.style.marginLeft = '8px';
+        editBtn.textContent = '✏️';
+        editBtn.title = 'Edit';
+        editBtn.style.padding = '0.2em 0.5em';
+        editBtn.style.fontSize = '1.1em';
         editBtn.onclick = () => {
-          // Remove the card and pre-fill the input boxes
           const [removed] = cards.splice(i, 1);
           updateWordList();
           wordInput.value = removed.word;
           defInput.value = removed.definition;
           wordInput.focus();
         };
-        li.appendChild(editBtn);
+        btnContainer.appendChild(editBtn);
 
-        // Delete button
+        // Delete button (🗑️)
         const delBtn = document.createElement('button');
-        delBtn.textContent = 'Delete';
-        delBtn.style.marginLeft = '4px';
+        delBtn.textContent = '🗑️';
+        delBtn.title = 'Delete';
+        delBtn.style.padding = '0.2em 0.5em';
+        delBtn.style.fontSize = '1.1em';
         delBtn.onclick = () => {
           cards.splice(i, 1);
           updateWordList();
         };
-        li.appendChild(delBtn);
+        btnContainer.appendChild(delBtn);
 
+        li.appendChild(btnContainer);
         wordList.appendChild(li);
       });
     }
@@ -132,8 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Serialization/Deserialization ---
 
-    // Allowed: A-Z, a-z, 0-9, space, ., ,, ?, !, -, _
-    // We escape | and ~ (used as separators) with backslash
     function escapeText(str) {
         return str.replace(/([|~\\])/g, '\\$1');
     }
@@ -142,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function serialize(cards) {
-        // word~definition|word~definition|...
         return cards.map(card =>
             `${escapeText(card.word)}~${escapeText(card.definition)}`
         ).join('|');
@@ -154,7 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let pair = '';
         let inEscape = false;
         let items = [];
-        // Split on |, but handle escapes
         for (let i = 0; i < str.length; i++) {
             let c = str[i];
             if (inEscape) {
@@ -196,27 +203,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return result;
     }
 
-    // --- Share/Load functionality with compression/obfuscation ---
+    // --- Share functionality with compression/obfuscation ---
 
     shareBtn.onclick = () => {
         const data = serialize(cards);
-        // Compress and encode to base64
         const compressed = LZString.compressToBase64(data);
         const url = `${location.origin}${location.pathname}#data=${encodeURIComponent(compressed)}`;
         prompt('Share this URL:', url);
-    };
-
-    loadBtn.onclick = () => {
-        const hash = location.hash;
-        if (hash.startsWith('#data=')) {
-            const compressed = decodeURIComponent(hash.slice(6));
-            const data = LZString.decompressFromBase64(compressed);
-            cards = deserialize(data);
-            updateWordList();
-            alert('Loaded flashcards from URL!');
-        } else {
-            alert('No flashcard data found in URL.');
-        }
     };
 
     // Auto-load if URL has data
@@ -237,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const isLight = document.body.classList.toggle('light');
       setTheme(isLight ? 'light' : 'dark');
     };
-    // On load, set theme from localStorage or default to dark
     if (localStorage.getItem('theme') === 'light') {
       setTheme('light');
     } else {
