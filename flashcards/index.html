@@ -1,12 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flashcards</title>
-    <script src="src/main.js" defer></script>
+  <meta charset="UTF-8">
+  <title>Flashcards App</title>
+  <style>
+    body { font-family: sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
+    .container { max-width: 400px; margin: 40px auto; background: #fff; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px #0001; }
+    .flashcard { cursor: pointer; background: #e3e3ff; border-radius: 8px; padding: 2em; text-align: center; font-size: 1.5em; margin-bottom: 1em; min-height: 80px; transition: background 0.2s; }
+    .hidden { display: none; }
+    input, button { font-size: 1em; padding: 0.5em; margin: 0.2em 0; width: 100%; box-sizing: border-box; }
+    button { background: #4a6cf7; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    button:disabled { background: #aaa; }
+    .center { text-align: center; }
+  </style>
 </head>
 <body>
-    <h1 id="greeting"></h1>
+  <div class="container">
+    <h2>Flashcards App</h2>
+    <div id="input-section">
+      <input id="word" type="text" placeholder="Word" autocomplete="off" />
+      <input id="definition" type="text" placeholder="Definition" autocomplete="off" />
+      <button id="add-btn">Add</button>
+      <button id="start-btn">Start Review</button>
+      <ul id="word-list"></ul>
+    </div>
+    <div id="review-section" class="hidden">
+      <div id="flashcard" class="flashcard"></div>
+      <div class="center">
+        <button id="restart-btn">Restart</button>
+      </div>
+    </div>
+  </div>
+  <script src="src/main.js"></script>
 </body>
 </html>
