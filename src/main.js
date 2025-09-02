@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import LZString from "lz-string";
+import { createRoot } from "react-dom/client";
 
 // Helper to encode/decode schedule in URL
 const encodeSchedule = (schedule) => encodeURIComponent(btoa(JSON.stringify(schedule)));
@@ -233,4 +234,6 @@ function App() {
   );
 }
 
-export default App;
+const container = document.getElementById("root");
+const root = createRoot(container);
+root.render(<App />);
