@@ -16,236 +16,210 @@ function decodeSchedule(str) {
   }
 }
 
-function App() {
-  const [workouts, setWorkouts] = useState([]);
-  const [schedule, setSchedule] = useState({});
-  const [selectedWorkout, setSelectedWorkout] = useState(null);
-  const [stepIdx, setStepIdx] = useState(0);
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = '';
 
-  // Load from URL if present
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("schedule")) {
-      setSchedule(decodeSchedule(params.get("schedule")));
+  // --- Create Workouts ---
+  const createDiv = document.createElement('div');
+  createDiv.innerHTML = '<h2>Create Workouts</h2>';
+  workouts.forEach((w, wIdx) => {
+    const wDiv = document.createElement('div');
+    wDiv.className = 'workout';
+    // Workout name
+    const wName = document.createElement('input');
+    wName.type = 'text';
+    wName.placeholder = 'Workout name';
+    wName.value = w.name;
+    wName.oninput = e => { w.name = e.target.value; render(); };
+    wDiv.appendChild(wName);
+
+    // Exercises
+    const exTitle = document.createElement('h4');
+    exTitle.textContent = 'Exercises';
+    wDiv.appendChild(exTitle);
+
+    w.exercises.forEach((ex, eIdx) => {
+      const exDiv = document.createElement('div');
+      exDiv.className = 'exercise';
+
+      const exName = document.createElement('input');
+      exName.type = 'text';
+      exName.placeholder = 'Exercise name';
+      exName.value = ex.name;
+      exName.oninput = e => { ex.name = e.target.value; render(); };
+      exDiv.appendChild(exName);
+
+      const exSets = document.createElement('input');
+      exSets.type = 'number';
+      exSets.placeholder = 'Sets';
+      exSets.value = ex.sets;
+      exSets.style.width = '60px';
+      exSets.oninput = e => { ex.sets = Number(e.target.value); render(); };
+      exDiv.appendChild(exSets);
+
+      const exReps = document.createElement('input');
+      exReps.type = 'number';
+      exReps.placeholder = 'Reps';
+      exReps.value = ex.reps;
+      exReps.style.width = '60px';
+      exReps.oninput = e => { ex.reps = Number(e.target.value); render(); };
+      exDiv.appendChild(exReps);
+
+      const exDur = document.createElement('input');
+      exDur.type = 'text';
+      exDur.placeholder = 'Duration (optional)';
+      exDur.value = ex.duration;
+      exDur.style.width = '120px';
+      exDur.oninput = e => { ex.duration = e.target.value; render(); };
+      exDiv.appendChild(exDur);
+
+      // Remove exercise button
+      const rmExBtn = document.createElement('button');
+      rmExBtn.textContent = 'Remove';
+      rmExBtn.onclick = () => {
+        w.exercises.splice(eIdx, 1);
+        render();
+      };
+      exDiv.appendChild(rmExBtn);
+
+      wDiv.appendChild(exDiv);
+    });
+
+    // Add exercise button
+    const addExBtn = document.createElement('button');
+    addExBtn.textContent = 'Add Exercise';
+    addExBtn.onclick = () => {
+      w.exercises.push({ name: '', sets: 3, reps: 10, duration: '' });
+      render();
+    };
+    wDiv.appendChild(addExBtn);
+
+    // Remove workout button
+    const rmWBtn = document.createElement('button');
+    rmWBtn.textContent = 'Remove Workout';
+    rmWBtn.onclick = () => {
+      workouts.splice(wIdx, 1);
+      render();
+    };
+    wDiv.appendChild(rmWBtn);
+
+    createDiv.appendChild(wDiv);
+  });
+
+  // Add workout button
+  const addWBtn = document.createElement('button');
+  addWBtn.textContent = 'Add Workout';
+  addWBtn.onclick = () => {
+    workouts.push({ name: '', exercises: [] });
+    render();
+  };
+  createDiv.appendChild(addWBtn);
+
+  app.appendChild(createDiv);
+
+  // --- Assign Workouts to Days ---
+  const schedDiv = document.createElement('div');
+  schedDiv.innerHTML = '<h2>Assign Workouts to Days</h2>';
+  daysOfWeek.forEach(day => {
+    const row = document.createElement('div');
+    const label = document.createElement('label');
+    label.textContent = day + ': ';
+    row.appendChild(label);
+
+    const sel = document.createElement('select');
+    sel.onchange = e => {
+      schedule[day] = e.target.value === '' ? undefined : Number(e.target.value);
+      render();
+    };
+    const opt0 = document.createElement('option');
+    opt0.value = '';
+    opt0.textContent = '-- Select Workout --';
+    sel.appendChild(opt0);
+    workouts.forEach((w, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = w.name || `Workout ${idx + 1}`;
+      if (schedule[day] === idx) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    row.appendChild(sel);
+    schedDiv.appendChild(row);
+  });
+  app.appendChild(schedDiv);
+
+  // --- Share Schedule ---
+  const shareDiv = document.createElement('div');
+  shareDiv.innerHTML = '<h2>Share Your Schedule</h2>';
+  const urlInput = document.createElement('input');
+  urlInput.type = 'text';
+  urlInput.readOnly = true;
+  urlInput.style.width = '100%';
+  urlInput.value = location.origin + location.pathname + '?schedule=' + encodeSchedule(schedule);
+  shareDiv.appendChild(urlInput);
+  app.appendChild(shareDiv);
+
+  // --- Start a Workout ---
+  const startDiv = document.createElement('div');
+  startDiv.innerHTML = '<h2>Start a Workout</h2>';
+  daysOfWeek.forEach(day => {
+    const wIdx = schedule[day];
+    if (wIdx !== undefined && workouts[wIdx]) {
+      const btn = document.createElement('button');
+      btn.textContent = `${day}: ${workouts[wIdx].name || `Workout ${wIdx + 1}`}`;
+      btn.onclick = () => {
+        selectedWorkout = wIdx;
+        stepIdx = 0;
+        render();
+      };
+      startDiv.appendChild(btn);
     }
-  }, []);
+  });
+  app.appendChild(startDiv);
 
-  // Add a new workout
-  const addWorkout = () => setWorkouts([...workouts, { name: "", exercises: [] }]);
+  // --- Workout Stepper ---
+  if (selectedWorkout !== null && workouts[selectedWorkout]) {
+    const stepper = document.createElement('div');
+    stepper.className = 'stepper';
+    const w = workouts[selectedWorkout];
+    const ex = w.exercises[stepIdx];
+    const title = document.createElement('h3');
+    title.textContent = `Workout: ${w.name}`;
+    stepper.appendChild(title);
 
-  // Add exercise to a workout
-  const addExercise = (wIdx) => {
-    const newWorkouts = [...workouts];
-    newWorkouts[wIdx].exercises.push({ name: "", sets: 3, reps: 10, duration: "" });
-    setWorkouts(newWorkouts);
-  };
+    if (ex) {
+      const exTitle = document.createElement('h4');
+      exTitle.textContent = `Exercise ${stepIdx + 1}: ${ex.name}`;
+      stepper.appendChild(exTitle);
 
-  // Update workout or exercise details
-  const updateWorkout = (wIdx, field, value) => {
-    const newWorkouts = [...workouts];
-    newWorkouts[wIdx][field] = value;
-    setWorkouts(newWorkouts);
-  };
-  const updateExercise = (wIdx, eIdx, field, value) => {
-    const newWorkouts = [...workouts];
-    newWorkouts[wIdx].exercises[eIdx][field] = value;
-    setWorkouts(newWorkouts);
-  };
+      const p = document.createElement('p');
+      p.innerHTML = `Sets: ${ex.sets} <br> Reps: ${ex.reps} <br>` +
+        (ex.duration ? `Duration: ${ex.duration} <br>` : '');
+      stepper.appendChild(p);
 
-  // Assign workout to a day
-  const assignWorkout = (day, wIdx) => {
-    setSchedule({ ...schedule, [day]: wIdx });
-  };
-
-  // Share schedule via URL
-  const shareUrl = `${window.location.origin}${window.location.pathname}?schedule=${encodeSchedule(schedule)}`;
-
-  // Workout stepper
-  const startWorkout = (wIdx) => {
-    setSelectedWorkout(wIdx);
-    setStepIdx(0);
-  };
-  const nextStep = () => setStepIdx((i) => i + 1);
-
-  // --- Serialization/Deserialization ---
-
-  function escapeText(str) {
-      return str.replace(/([|~\\])/g, '\\$1');
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = 'Next Exercise';
+      nextBtn.disabled = stepIdx + 1 >= w.exercises.length;
+      nextBtn.onclick = () => {
+        stepIdx++;
+        render();
+      };
+      stepper.appendChild(nextBtn);
+    } else {
+      const done = document.createElement('h4');
+      done.textContent = 'Workout Complete!';
+      stepper.appendChild(done);
+      const backBtn = document.createElement('button');
+      backBtn.textContent = 'Back';
+      backBtn.onclick = () => {
+        selectedWorkout = null;
+        render();
+      };
+      stepper.appendChild(backBtn);
+    }
+    app.appendChild(stepper);
   }
-  function unescapeText(str) {
-      return str.replace(/\\([|~\\])/g, '$1');
-  }
-
-  function serialize(cards) {
-      return cards.map(card =>
-          `${escapeText(card.word)}~${escapeText(card.definition)}`
-      ).join('|');
-  }
-
-  function deserialize(str) {
-      if (!str) return [];
-      let result = [];
-      let pair = '';
-      let inEscape = false;
-      let items = [];
-      for (let i = 0; i < str.length; i++) {
-          let c = str[i];
-          if (inEscape) {
-              pair += c;
-              inEscape = false;
-          } else if (c === '\\') {
-              inEscape = true;
-          } else if (c === '|') {
-              items.push(pair);
-              pair = '';
-          } else {
-              pair += c;
-          }
-      }
-      if (pair) items.push(pair);
-      for (let item of items) {
-          let parts = [];
-          let part = '';
-          inEscape = false;
-          for (let i = 0; i < item.length; i++) {
-              let c = item[i];
-              if (inEscape) {
-                  part += c;
-                  inEscape = false;
-              } else if (c === '\\') {
-                  inEscape = true;
-              } else if (c === '~') {
-                  parts.push(part);
-                  part = '';
-              } else {
-                  part += c;
-              }
-          }
-          parts.push(part);
-          if (parts.length === 2) {
-              result.push({ word: parts[0], definition: parts[1] });
-          }
-      }
-      return result;
-  }
-
-  // --- Share functionality with compression/obfuscation ---
-
-  // Auto-load if URL has data
-  if (location.hash.startsWith('#data=')) {
-      const compressed = decodeURIComponent(location.hash.slice(6));
-      const data = LZString.decompressFromBase64(compressed);
-      cards = deserialize(data);
-      updateWordList();
-  }
-
-  return (
-    <div>
-      <h1>Workout App</h1>
-      <div id="app"></div>
-      <h2>Create Workouts</h2>
-      {workouts.map((w, wIdx) => (
-        <div key={wIdx} style={{ border: "1px solid #ccc", margin: 8, padding: 8 }}>
-          <input
-            placeholder="Workout name"
-            value={w.name}
-            onChange={e => updateWorkout(wIdx, "name", e.target.value)}
-          />
-          <h4>Exercises</h4>
-          {w.exercises.map((ex, eIdx) => (
-            <div key={eIdx}>
-              <input
-                placeholder="Exercise name"
-                value={ex.name}
-                onChange={e => updateExercise(wIdx, eIdx, "name", e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Sets"
-                value={ex.sets}
-                onChange={e => updateExercise(wIdx, eIdx, "sets", e.target.value)}
-                style={{ width: 60 }}
-              />
-              <input
-                type="number"
-                placeholder="Reps"
-                value={ex.reps}
-                onChange={e => updateExercise(wIdx, eIdx, "reps", e.target.value)}
-                style={{ width: 60 }}
-              />
-              <input
-                placeholder="Duration (optional)"
-                value={ex.duration}
-                onChange={e => updateExercise(wIdx, eIdx, "duration", e.target.value)}
-                style={{ width: 120 }}
-              />
-            </div>
-          ))}
-          <button onClick={() => addExercise(wIdx)}>Add Exercise</button>
-        </div>
-      ))}
-      <button onClick={addWorkout}>Add Workout</button>
-
-      <h2>Assign Workouts to Days</h2>
-      {daysOfWeek.map(day => (
-        <div key={day}>
-          <label>{day}: </label>
-          <select
-            value={schedule[day] ?? ""}
-            onChange={e => assignWorkout(day, e.target.value)}
-          >
-            <option value="">-- Select Workout --</option>
-            {workouts.map((w, idx) => (
-              <option key={idx} value={idx}>{w.name || `Workout ${idx + 1}`}</option>
-            ))}
-          </select>
-        </div>
-      ))}
-
-      <h2>Share Your Schedule</h2>
-      <input value={shareUrl} readOnly style={{ width: "100%" }} />
-
-      <h2>Start a Workout</h2>
-      {daysOfWeek.map(day => (
-        schedule[day] !== undefined && workouts[schedule[day]] ? (
-          <button key={day} onClick={() => startWorkout(schedule[day])}>
-            {day}: {workouts[schedule[day]].name}
-          </button>
-        ) : null
-      ))}
-
-      {selectedWorkout !== null && (
-        <div style={{ marginTop: 20, border: "2px solid #444", padding: 16 }}>
-          <h3>Workout: {workouts[selectedWorkout].name}</h3>
-          {workouts[selectedWorkout].exercises[stepIdx] ? (
-            <div>
-              <h4>Exercise {stepIdx + 1}: {workouts[selectedWorkout].exercises[stepIdx].name}</h4>
-              <p>
-                Sets: {workouts[selectedWorkout].exercises[stepIdx].sets} <br />
-                Reps: {workouts[selectedWorkout].exercises[stepIdx].reps} <br />
-                {workouts[selectedWorkout].exercises[stepIdx].duration && (
-                  <>Duration: {workouts[selectedWorkout].exercises[stepIdx].duration} <br /></>
-                )}
-              </p>
-              <button onClick={nextStep} disabled={stepIdx + 1 >= workouts[selectedWorkout].exercises.length}>
-                Next Exercise
-              </button>
-            </div>
-          ) : (
-            <div>
-              <h4>Workout Complete!</h4>
-              <button onClick={() => setSelectedWorkout(null)}>Back</button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 }
-
-const container = document.getElementById("root");
-const root = createRoot(container);
-root.render(<App />);
 
 // --- Load from URL if present ---
 (function loadFromUrl() {
@@ -254,3 +228,5 @@ root.render(<App />);
     schedule = decodeSchedule(params.get('schedule'));
   }
 })();
+
+render();
