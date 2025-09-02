@@ -1,0 +1,16 @@
+{
+  "name": "flashcards",
+  "version": "1.0.0",
+  "description": "A simple JavaScript-based flashcards website.",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "live-server",
+    "deploy": "gh-pages -d ."
+  },
+  "dependencies": {
+    "gh-pages": "^3.2.3",
+    "live-server": "^1.2.1"
+  },
+  "author": "",
+  "license": "ISC"
+}
