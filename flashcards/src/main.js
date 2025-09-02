@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const reviewSection = document.getElementById('review-section');
     const flashcard = document.getElementById('flashcard');
     const restartBtn = document.getElementById('restart-btn');
+    const toggleThemeBtn = document.getElementById('toggle-theme-btn');
 
     // New: Share/Load buttons
     let shareBtn = document.getElementById('share-btn');
@@ -34,7 +35,32 @@ document.addEventListener('DOMContentLoaded', () => {
       wordList.innerHTML = '';
       cards.forEach((c, i) => {
         const li = document.createElement('li');
-        li.textContent = `${c.word} — ${c.definition}`;
+        li.textContent = `${c.word} — ${c.definition} `;
+
+        // Edit button
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.style.marginLeft = '8px';
+        editBtn.onclick = () => {
+          // Remove the card and pre-fill the input boxes
+          const [removed] = cards.splice(i, 1);
+          updateWordList();
+          wordInput.value = removed.word;
+          defInput.value = removed.definition;
+          wordInput.focus();
+        };
+        li.appendChild(editBtn);
+
+        // Delete button
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.style.marginLeft = '4px';
+        delBtn.onclick = () => {
+          cards.splice(i, 1);
+          updateWordList();
+        };
+        li.appendChild(delBtn);
+
         wordList.appendChild(li);
       });
     }
@@ -68,18 +94,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function showCard() {
       if (currentIdx >= reviewOrder.length) {
         flashcard.textContent = "Review complete!";
-        flashcard.style.background = "#d4ffd4";
+        flashcard.style.background = "#2ecc40";
+        flashcard.style.color = "#fff";
         flashcard.onclick = null;
         return;
       }
       const idx = reviewOrder[currentIdx];
       flashcard.textContent = cards[idx].word;
-      flashcard.style.background = "#e3e3ff";
+      flashcard.style.background = "";
+      flashcard.style.color = "";
       showingWord = true;
       flashcard.onclick = () => {
         if (showingWord) {
           flashcard.textContent = cards[idx].definition;
           flashcard.style.background = "#ffe3e3";
+          flashcard.style.color = "#181c20";
           showingWord = false;
         } else {
           currentIdx++;
@@ -196,5 +225,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = LZString.decompressFromBase64(compressed);
         cards = deserialize(data);
         updateWordList();
+    }
+
+    // --- Theme toggle ---
+    function setTheme(theme) {
+      document.body.classList.toggle('light', theme === 'light');
+      toggleThemeBtn.textContent = theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+      localStorage.setItem('theme', theme);
+    }
+    toggleThemeBtn.onclick = () => {
+      const isLight = document.body.classList.toggle('light');
+      setTheme(isLight ? 'light' : 'dark');
+    };
+    // On load, set theme from localStorage or default to dark
+    if (localStorage.getItem('theme') === 'light') {
+      setTheme('light');
+    } else {
+      setTheme('dark');
     }
 });
