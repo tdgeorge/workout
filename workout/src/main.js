@@ -9,9 +9,16 @@ let schedule = {};
 let selectedWorkout = null;
 let stepIdx = 0;
 
-// Helper to encode/decode schedule in URL
-const encodeSchedule = (schedule) => encodeURIComponent(btoa(JSON.stringify(schedule)));
-const decodeSchedule = (str) => JSON.parse(atob(decodeURIComponent(str)));
+function encodeSchedule(obj) {
+  return encodeURIComponent(btoa(JSON.stringify(obj)));
+}
+function decodeSchedule(str) {
+  try {
+    return JSON.parse(atob(decodeURIComponent(str)));
+  } catch {
+    return {};
+  }
+}
 
 function App() {
   const [workouts, setWorkouts] = useState([]);
@@ -249,3 +256,4 @@ root.render(<App />);
   if (params.get('schedule')) {
     schedule = decodeSchedule(params.get('schedule'));
   }
+})();
