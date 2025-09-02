@@ -11,6 +11,9 @@
     "gh-pages": "^3.2.3",
     "live-server": "^1.2.1"
   },
+  "scripts": {
+    "build": "echo 'No build step needed for static site'"
+  },
   "author": "",
   "license": "ISC"
 }
