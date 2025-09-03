@@ -149,8 +149,8 @@ export function renderUI() {
               let { timerInterval, timerEndTime } = getTimerState();
               if (timerInterval && timerEndTime) {
                 const timerDivLive = document.getElementById("timer-display");
+                const remaining = Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000)); // <-- add this line
                 if (timerDivLive) {
-                  const remaining = Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000));
                   timerDivLive.textContent = remaining + "s";
                 }
                 if (remaining > 0) {
