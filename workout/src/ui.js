@@ -1,4 +1,4 @@
-import { daysOfWeek, workouts, schedule, saveState } from './state.js';
+import { daysOfWeek, workouts, schedule, saveState, encodeState } from './state.js';
 import { renderDarkToggle, darkMode } from './darkmode.js';
 import { clearTimer, parseDuration, playBeep, getTimerState, setTimerState } from './timer.js';
 
