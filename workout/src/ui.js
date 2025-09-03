@@ -147,15 +147,13 @@ export function renderUI() {
             // Live update timer label every second, even if renderUI() is called
             function updateTimerLabel() {
               let { timerInterval, timerEndTime } = getTimerState();
-              if (timerInterval && timerEndTime) {
-                const timerDivLive = document.getElementById("timer-display");
-                const remaining = Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000)); // <-- add this line
-                if (timerDivLive) {
-                  timerDivLive.textContent = remaining + "s";
-                }
-                if (remaining > 0) {
-                  setTimeout(updateTimerLabel, 1000);
-                }
+              const timerDivLive = document.getElementById("timer-display");
+              const remaining = Math.max(0, Math.ceil((timerEndTime - Date.now()) / 1000));
+              if (timerDivLive) {
+                timerDivLive.textContent = remaining + "s";
+              }
+              if (timerInterval && timerEndTime && remaining > 0) {
+                setTimeout(updateTimerLabel, 1000);
               }
             }
             updateTimerLabel();
